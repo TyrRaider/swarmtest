@@ -1,0 +1,24 @@
+---
+- name: Async test
+  hosts: demo
+  tasks:
+  - name: "Preconfig block"
+    block:
+    - name: Sleep
+      command: /bin/sleep 15
+      async: 1000
+      poll: 0 # переход к след задаче без поллинга текущей
+      register: sleep
+    - debug:
+        var: sleep
+    - name: Echo
+      command: echo "DONE"
+    become: true
+  - name: Check sleep status
+    async_status: # проверка статуса таски на слип
+      jid: "{{ sleep.ansible_job_id }}"
+    register: job_result
+    until: job_result.finished
+    retries: 100
+    delay: 1
+    become: true

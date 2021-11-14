@@ -1,0 +1,57 @@
+---
+- name: Configuring server for using Docker
+  hosts: demo
+  tasks:
+  - name: DOCKER INSTALLATION
+    block:
+    - name: Installing required tools
+      apt:
+        name: ["ca-certificates", "curl", "gnupg", "lsb-release"]
+        state: present
+        update_cache: true
+
+    - name: Adding Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Adding Docker repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Installing Docker and Compose
+      apt:
+        name: ["docker-ce", "docker-ce-cli", "containerd.io", "docker-compose"]
+        state: present
+        update_cache: true
+
+    - name: Gather the package facts
+      package_facts:
+        manager: auto
+      
+    - name: Ensure the Docker service is running
+      service:
+        name: docker
+        state: started
+    
+    - name: Create user for using Docker
+      user:
+        name: devops
+        comment: devops
+        uid: 8888
+        groups: sudo, docker
+        append: yes
+
+    - name: Performing docker test run HelloWorld container
+      docker_container:
+        name: test
+        image: hello-world
+        detach: false
+      register: docker_container_output
+    - name: Show test output
+      debug:
+        msg: "{{ docker_container_output.ansible_facts.docker_container.Output }}"
+
+
+    become: true 
